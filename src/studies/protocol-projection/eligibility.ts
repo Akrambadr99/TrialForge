@@ -1,0 +1,1 @@
+export function eligibilityDecision(held:readonly string[],required:readonly string[],expiresOn:string,at:string){if(!/^\d{4}-\d{2}-\d{2}$/.test(expiresOn)||!/^\d{4}-\d{2}-\d{2}$/.test(at))throw new Error('Invalid Eligibility criteria date.');const missing=required.filter(item=>!held.includes(item));return{qualified:missing.length===0&&expiresOn>=at,missing,expired:expiresOn<at}}
