@@ -20,3 +20,6 @@ test('Subject protocol evidence 3',async({page})=>{await page.goto('/studies/TF-
 
 
 test('Subject readiness restores and recovers domain state',async({page})=>{await page.goto('/studies/TF-201/subjects/S-014/readiness?protocolDate=2026-09-17&focus=VIS-06');await expect(page.getByRole('heading',{name:"Protocol-effective subject readiness",exact:true})).toBeVisible();await page.getByLabel('Authority').selectOption("medical reviewer");await page.getByRole('button',{name:'Run domain bulk action'}).click();await expect(page.getByRole('status')).toContainText('1 succeeded; 1 require recovery');await expect(page.getByRole('button',{name:'Retry failed records'})).toBeVisible()});
+
+
+test('Site activation restores a feasible decision',async({page})=>{await page.goto('/studies/TF-201/sites/SITE-14/activation?subjects=12');await expect(page.getByRole('heading',{name:"Site activation and enrollment planner",exact:true})).toBeVisible();await expect(page.getByRole('region',{name:'Scenario result'})).toContainText(/Feasible|Blocked/);await expect(page.getByText("protocol amendment",{exact:false}).first()).toBeVisible()});
