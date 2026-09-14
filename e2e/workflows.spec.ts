@@ -17,3 +17,6 @@ test('Subject protocol deep workflow',async({page})=>{await page.goto('/studies/
 test('Subject protocol evidence 1',async({page})=>{await page.goto('/studies/TF-201/subjects/S-014/timeline');await expect(page.getByText('Subject S-014',{exact:false}).first()).toBeVisible()});
 test('Subject protocol evidence 2',async({page})=>{await page.goto('/studies/TF-201/subjects/S-014/timeline');await expect(page.getByText('Consent v4',{exact:false}).first()).toBeVisible()});
 test('Subject protocol evidence 3',async({page})=>{await page.goto('/studies/TF-201/subjects/S-014/timeline');await expect(page.getByText('Visit 6',{exact:false}).first()).toBeVisible()});
+
+
+test('Subject readiness restores and recovers domain state',async({page})=>{await page.goto('/studies/TF-201/subjects/S-014/readiness?protocolDate=2026-09-17&focus=VIS-06');await expect(page.getByRole('heading',{name:"Protocol-effective subject readiness",exact:true})).toBeVisible();await page.getByLabel('Authority').selectOption("medical reviewer");await page.getByRole('button',{name:'Run domain bulk action'}).click();await expect(page.getByRole('status')).toContainText('1 succeeded; 1 require recovery');await expect(page.getByRole('button',{name:'Retry failed records'})).toBeVisible()});
