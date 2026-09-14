@@ -1,0 +1,15 @@
+/* eslint-disable @typescript-eslint/no-unsafe-return, @typescript-eslint/no-unsafe-call, @typescript-eslint/no-unsafe-member-access */
+import{expect,test}from'@playwright/test';
+test.beforeEach(async({page})=>{await page.addInitScript(()=>localStorage.clear())});
+test('opens the command center',async({page})=>{await page.goto('/');await expect(page.getByRole('heading',{name:"TrialForge command center"})).toBeVisible()});
+test('navigates to the connected operations workspace',async({page})=>{await page.goto('/');await page.getByRole('link',{name:'Operations'}).click();await expect(page.getByText(/LIVE WORKSPACE/)).toBeVisible()});
+test('renders derived analytics',async({page})=>{await page.goto('/analytics');await expect(page.getByRole('heading',{name:'Operational analytics'})).toBeVisible()});
+test("Protocol amendment control route is operational",async({page})=>{await page.goto('/protocol-amendment');await expect(page.getByRole('heading',{name:"Protocol amendment control"})).toBeVisible();await expect(page.getByText(/revision 1/).first()).toBeVisible()})
+test("Site activation route is operational",async({page})=>{await page.goto('/site-activation');await expect(page.getByRole('heading',{name:"Site activation"})).toBeVisible();await expect(page.getByText(/revision 1/).first()).toBeVisible()})
+test("Subject eligibility route is operational",async({page})=>{await page.goto('/subject-eligibility');await expect(page.getByRole('heading',{name:"Subject eligibility"})).toBeVisible();await expect(page.getByText(/revision 1/).first()).toBeVisible()})
+test("Protocol visit windows route is operational",async({page})=>{await page.goto('/visit-window');await expect(page.getByRole('heading',{name:"Protocol visit windows"})).toBeVisible();await expect(page.getByText(/revision 1/).first()).toBeVisible()})
+test("Enrollment capacity route is operational",async({page})=>{await page.goto('/enrollment-cap');await expect(page.getByRole('heading',{name:"Enrollment capacity"})).toBeVisible();await expect(page.getByText(/revision 1/).first()).toBeVisible()})
+test("Protocol deviation review route is operational",async({page})=>{await page.goto('/protocol-deviation');await expect(page.getByRole('heading',{name:"Protocol deviation review"})).toBeVisible();await expect(page.getByText(/revision 1/).first()).toBeVisible()})
+test("Serious adverse event reporting route is operational",async({page})=>{await page.goto('/adverse-event');await expect(page.getByRole('heading',{name:"Serious adverse event reporting"})).toBeVisible();await expect(page.getByText(/revision 1/).first()).toBeVisible()})
+test("Study database lock route is operational",async({page})=>{await page.goto('/database-lock');await expect(page.getByRole('heading',{name:"Study database lock"})).toBeVisible();await expect(page.getByText(/revision 1/).first()).toBeVisible()})
+test('retains keyboard-visible product navigation',async({page})=>{await page.goto('/');await page.keyboard.press('Tab');await expect(page.locator(':focus')).toBeVisible()});
