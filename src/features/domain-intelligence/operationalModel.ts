@@ -1,0 +1,5 @@
+export interface OperationalNode{id:string;label:string;capacity:number;demand:number;dependsOn:string[];effectiveFrom:string;effectiveTo:string;version:number}
+export const operationalNodes:OperationalNode[]=[{"id":"TF-118","label":"Eligibility variance","capacity":9,"demand":5,"dependsOn":[],"effectiveFrom":"2026-09-01","effectiveTo":"2026-12-31","version":2},{"id":"TF-124","label":"Visit deviation","capacity":7,"demand":6,"dependsOn":["TF-118"],"effectiveFrom":"2026-09-01","effectiveTo":"2026-09-20","version":3},{"id":"TF-131","label":"Consent evidence","capacity":6,"demand":8,"dependsOn":["TF-124"],"effectiveFrom":"2026-09-18","effectiveTo":"2026-12-31","version":4},{"id":"TF-139","label":"Excursion disposition","capacity":8,"demand":4,"dependsOn":["TF-118"],"effectiveFrom":"2026-09-01","effectiveTo":"2026-12-31","version":5}];
+export const scenarioModes=["Protocol v3.1","Protocol v3.2","Pending amendment"] as const;
+export const metricLabels=["Ready subjects","Evidence coverage","Approval exposure"] as const;
+export const domainCoefficient=2.1;export const secondaryWeight=11;export const riskWeight=9;
