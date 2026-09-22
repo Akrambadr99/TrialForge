@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { useParams } from 'react-router-dom'
 import { effectiveProtocol, protocolVersions, subject, visit, visitFindings, visitWindow } from './protocol'
-import { commitMilestone, readMilestone } from './subjectLedger'
+import { amendmentReviewPolicy, commitMilestone, readMilestone } from './subjectLedger'
 export function SubjectProtocolTimelinePage() {
   const { studyId, subjectId } = useParams()
   const [appointment, setAppointment] = useState('2026-09-14')
@@ -9,6 +9,8 @@ export function SubjectProtocolTimelinePage() {
   const [withdrawn, setWithdrawn] = useState(false)
   const [milestone, setMilestone] = useState(() => readMilestone(window.localStorage))
   const [notice, setNotice] = useState('')
+  const [actor, setActor] = useState('protocol author')
+  const review = amendmentReviewPolicy(milestone, actor)
   const person = { ...subject, consentVersion, withdrawnAt: withdrawn ? '2026-09-13' : undefined }
   const protocol = effectiveProtocol(protocolVersions, appointment)
   const findings = visitFindings(person, appointment)
@@ -23,11 +25,15 @@ export function SubjectProtocolTimelinePage() {
     catch (error) { setNotice(error instanceof Error ? error.message : 'Reopen failed.') }
   }
   function amend() {
-    try { setMilestone(commitMilestone(window.localStorage, { type: 'amend-protocol', version: milestone.activeProtocolVersion + 1, reason: 'Study amendment changes visit review requirements.' })); setNotice('Protocol amended; recorded visit requires revalidation.') }
+    try { setMilestone(commitMilestone(window.localStorage, { type: 'amend-protocol', version: milestone.activeProtocolVersion + 1, reason: 'Study amendment changes visit review requirements.', actor })); setNotice('Protocol amended; independent certification required.') }
     catch (error) { setNotice(error instanceof Error ? error.message : 'Amendment failed.') }
   }
+  function certify() {
+    try { setMilestone(commitMilestone(window.localStorage, { type: 'certify-amendment', actor, reason: 'Independent medical review confirms current protocol.' })); setNotice('Current protocol independently certified.') }
+    catch (error) { setNotice(error instanceof Error ? error.message : 'Certification failed.') }
+  }
   function revalidate() {
-    try { setMilestone(commitMilestone(window.localStorage, { type: 'revalidate-visit', reason: 'Recorded evidence reviewed under active protocol.' })); setNotice('Visit evidence revalidated.') }
+    try { setMilestone(commitMilestone(window.localStorage, { type: 'revalidate-visit', reason: 'Recorded evidence reviewed under active protocol.', actor })); setNotice('Visit evidence revalidated.') }
     catch (error) { setNotice(error instanceof Error ? error.message : 'Revalidation failed.') }
   }
   return <div className="suite-page">
@@ -52,8 +58,12 @@ export function SubjectProtocolTimelinePage() {
       {milestone.visitAt && <button onClick={reopen}>Reopen Visit 6</button>}
       <p>Visit record: {milestone.visitAt ?? 'pending'} · Revision {milestone.revision}</p>
       <p>Active protocol v{milestone.activeProtocolVersion}</p>
+      <p>Certified protocol v{milestone.certifiedProtocolVersion} · Review queue: {review.queue}</p>
+      <label>Protocol actor <select value={actor} onChange={event => { setActor(event.target.value) }}><option>protocol author</option><option>medical reviewer</option></select></label>
       {milestone.visitAt && <button onClick={amend}>Record protocol amendment</button>}
-      {milestone.visitAt && milestone.protocolVersion !== milestone.activeProtocolVersion && <button onClick={revalidate}>Revalidate Visit 6</button>}
+      {milestone.certifiedProtocolVersion !== milestone.activeProtocolVersion && <button disabled={!review.allowed} onClick={certify}>Certify amendment</button>}
+      {milestone.visitAt && milestone.protocolVersion !== milestone.activeProtocolVersion && <button disabled={milestone.certifiedProtocolVersion !== milestone.activeProtocolVersion || actor !== 'medical reviewer'} onClick={revalidate}>Revalidate Visit 6</button>}
+      {milestone.certifiedProtocolVersion !== milestone.activeProtocolVersion && review.blockers.map(item => <p key={item}>{item}</p>)}
       <p role="status">{notice || (milestone.visitAt ? 'Visit recorded.' : 'Review blinded evidence before recording.')}</p>
     </section>
   </div>
