@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { useParams } from 'react-router-dom'
 import { effectiveProtocol, protocolVersions, subject, visit, visitFindings, visitWindow } from './protocol'
 import { amendmentReviewPolicy, commitMilestone, medicalReviewInbox, readMilestone, requestMedicalReview, saveMilestone } from './subjectLedger'
+import { claimMedicalReview, protocolInbox, protocolReviewers, releaseMedicalClaim } from './protocolWorkload'
 export function SubjectProtocolTimelinePage() {
   const { studyId, subjectId } = useParams()
   const [appointment, setAppointment] = useState('2026-09-14')
@@ -10,6 +11,7 @@ export function SubjectProtocolTimelinePage() {
   const [milestone, setMilestone] = useState(() => readMilestone(window.localStorage))
   const [notice, setNotice] = useState('')
   const [actor, setActor] = useState('protocol author')
+  const [reviewerId, setReviewerId] = useState('med-elaine')
   const review = amendmentReviewPolicy(milestone, actor)
   const person = { ...subject, consentVersion, withdrawnAt: withdrawn ? '2026-09-13' : undefined }
   const protocol = effectiveProtocol(protocolVersions, appointment)
@@ -29,8 +31,21 @@ export function SubjectProtocolTimelinePage() {
     catch (error) { setNotice(error instanceof Error ? error.message : 'Amendment failed.') }
   }
   function certify() {
-    try { setMilestone(commitMilestone(window.localStorage, { type: 'certify-amendment', actor, reason: 'Independent medical review confirms current protocol.' })); setNotice('Current protocol independently certified.') }
+    try { setMilestone(commitMilestone(window.localStorage, { type: 'certify-amendment', actor, reviewerId, reason: 'Independent medical review confirms current protocol.' })); setNotice('Current protocol independently certified.') }
     catch (error) { setNotice(error instanceof Error ? error.message : 'Certification failed.') }
+  }
+  function claim() {
+    try {
+      const current = readMilestone(window.localStorage)
+      const next = claimMedicalReview(current, studyId ?? 'TF-201', reviewerId,
+        [{ subjectId: subjectId ?? 'S-014', studyId: studyId ?? 'TF-201', milestone: current }], current.revision)
+      setMilestone(saveMilestone(window.localStorage, next))
+      setNotice('Medical review claimed by ' + reviewerId + '.')
+    } catch (error) { setNotice(error instanceof Error ? error.message : 'Claim failed.') }
+  }
+  function releaseClaim() {
+    try { setMilestone(saveMilestone(window.localStorage, releaseMedicalClaim(readMilestone(window.localStorage), reviewerId))); setNotice('Medical review returned to team queue.') }
+    catch (error) { setNotice(error instanceof Error ? error.message : 'Claim release failed.') }
   }
   function handoff() {
     try {
@@ -67,13 +82,19 @@ export function SubjectProtocolTimelinePage() {
       <p>Active protocol v{milestone.activeProtocolVersion}</p>
       <p>Certified protocol v{milestone.certifiedProtocolVersion} · Review queue: {review.queue}</p>
       <label>Protocol actor <select value={actor} onChange={event => { setActor(event.target.value) }}><option>protocol author</option><option>medical reviewer</option></select></label>
+      <label>Named medical reviewer <select value={reviewerId} onChange={event => { setReviewerId(event.target.value) }}>
+        {protocolReviewers.map(item => <option key={item.id} value={item.id}>{item.name}</option>)}
+      </select></label>
       {milestone.visitAt && <button onClick={amend}>Record protocol amendment</button>}
       {milestone.certifiedProtocolVersion !== milestone.activeProtocolVersion && <button onClick={handoff}>Request medical review</button>}
+      {milestone.medicalReviews?.some(item => item.status === 'open' && !item.assigneeId) && <button onClick={claim}>Claim medical review</button>}
+      {milestone.medicalReviews?.some(item => item.status === 'open' && item.assigneeId === reviewerId) && <button onClick={releaseClaim}>Release claim</button>}
       {milestone.certifiedProtocolVersion !== milestone.activeProtocolVersion && <button disabled={!review.allowed} onClick={certify}>Certify amendment</button>}
       {(milestone.medicalReviews ?? []).length > 0 && <div aria-label="Medical review inbox">
         <h3>Protocol review requests</h3>
         {(milestone.medicalReviews ?? []).map(item => <p key={item.id}>{item.id} · {item.assignee} · {item.status} · protocol v{item.protocolVersion}</p>)}
         <p>{medicalReviewInbox(milestone, actor).length} assigned to current actor</p>
+        <p>{protocolInbox([{ subjectId: subjectId ?? 'S-014', studyId: studyId ?? 'TF-201', milestone }], reviewerId).length} named work item(s)</p>
       </div>}
       {milestone.visitAt && milestone.protocolVersion !== milestone.activeProtocolVersion && <button disabled={milestone.certifiedProtocolVersion !== milestone.activeProtocolVersion || actor !== 'medical reviewer'} onClick={revalidate}>Revalidate Visit 6</button>}
       {milestone.certifiedProtocolVersion !== milestone.activeProtocolVersion && review.blockers.map(item => <p key={item}>{item}</p>)}

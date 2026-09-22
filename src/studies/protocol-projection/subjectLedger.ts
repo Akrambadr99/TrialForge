@@ -17,6 +17,7 @@ export interface MedicalReview {
   sourceRevision: number
   requestedBy: string
   assignee: string
+  assigneeId?: string | null
   status: 'open' | 'stale' | 'completed' | 'superseded'
   supersedesId?: string
   outcome?: 'certified' | 'changes_requested'
@@ -27,7 +28,7 @@ export type SubjectAction =
   | { type: 'authorize-next' }
   | { type: 'reopen-visit' }
   | { type: 'amend-protocol'; version: number; reason: string; actor: string }
-  | { type: 'certify-amendment'; actor: string; reason: string }
+  | { type: 'certify-amendment'; actor: string; reason: string; reviewerId?: string }
   | { type: 'revalidate-visit'; reason: string; actor: string }
 const key = 'trialforge:subject:S-014:milestones:v1'
 export const initialMilestone: SubjectMilestone = { visitAt: null, protocolVersion: null, activeProtocolVersion: 4, amendmentAuthor: null, certifiedProtocolVersion: 4, nextVisitAuthorized: false, medicalReviews: [], revision: 0, history: [] }
@@ -54,7 +55,7 @@ export function requestMedicalReview(state: SubjectMilestone, actor: string, ass
   const previous = [...(state.medicalReviews ?? [])].reverse().find(item => item.status === 'stale')
   const revision = state.revision + 1
   const request: MedicalReview = { id: `PROTOCOL-${String(state.activeProtocolVersion)}-${String(revision)}`, protocolVersion: state.activeProtocolVersion,
-    sourceRevision: revision, requestedBy: actor, assignee, status: 'open', ...(previous ? { supersedesId: previous.id } : {}) }
+    sourceRevision: revision, requestedBy: actor, assignee, assigneeId: null, status: 'open', ...(previous ? { supersedesId: previous.id } : {}) }
   return { ...state, revision, medicalReviews: [...(state.medicalReviews ?? []).map(item => item.id === previous?.id ?
     { ...item, status: 'superseded' as const } : item), request], history: [...state.history, { revision, action: 'review-requested', source: 'protocol-timeline', actor }] }
 }
@@ -109,6 +110,7 @@ export function transitionMilestone(state: SubjectMilestone, action: SubjectActi
       { const reviews = state.medicalReviews ?? []; if (reviews.length) {
         const request = medicalReviewInbox(state, action.actor).find(item => item.protocolVersion === state.activeProtocolVersion)
         if (request?.sourceRevision !== state.revision) throw new Error('A current medical review must be assigned to this reviewer.')
+        if (request.assigneeId && request.assigneeId !== action.reviewerId) throw new Error('This medical review belongs to another named reviewer.')
       } }
       next = { ...state, certifiedProtocolVersion: state.activeProtocolVersion,
         medicalReviews: state.medicalReviews?.map(item => item.status === 'open' && item.protocolVersion === state.activeProtocolVersion ?
