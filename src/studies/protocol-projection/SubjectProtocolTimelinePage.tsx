@@ -22,6 +22,14 @@ export function SubjectProtocolTimelinePage() {
     try { setMilestone(commitMilestone(window.localStorage, { type: 'reopen-visit' })); setNotice('Visit 6 reopened for review.') }
     catch (error) { setNotice(error instanceof Error ? error.message : 'Reopen failed.') }
   }
+  function amend() {
+    try { setMilestone(commitMilestone(window.localStorage, { type: 'amend-protocol', version: milestone.activeProtocolVersion + 1, reason: 'Study amendment changes visit review requirements.' })); setNotice('Protocol amended; recorded visit requires revalidation.') }
+    catch (error) { setNotice(error instanceof Error ? error.message : 'Amendment failed.') }
+  }
+  function revalidate() {
+    try { setMilestone(commitMilestone(window.localStorage, { type: 'revalidate-visit', reason: 'Recorded evidence reviewed under active protocol.' })); setNotice('Visit evidence revalidated.') }
+    catch (error) { setNotice(error instanceof Error ? error.message : 'Revalidation failed.') }
+  }
   return <div className="suite-page">
     <header className="suite-title"><div><small>STUDY / EFFECTIVE PROTOCOL</small>
       <h1>Subject protocol timeline</h1>
@@ -43,6 +51,9 @@ export function SubjectProtocolTimelinePage() {
       <button disabled={findings.length > 0 || Boolean(milestone.visitAt)} onClick={record}>Record visit</button>
       {milestone.visitAt && <button onClick={reopen}>Reopen Visit 6</button>}
       <p>Visit record: {milestone.visitAt ?? 'pending'} · Revision {milestone.revision}</p>
+      <p>Active protocol v{milestone.activeProtocolVersion}</p>
+      {milestone.visitAt && <button onClick={amend}>Record protocol amendment</button>}
+      {milestone.visitAt && milestone.protocolVersion !== milestone.activeProtocolVersion && <button onClick={revalidate}>Revalidate Visit 6</button>}
       <p role="status">{notice || (milestone.visitAt ? 'Visit recorded.' : 'Review blinded evidence before recording.')}</p>
     </section>
   </div>
