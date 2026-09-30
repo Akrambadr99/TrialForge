@@ -16,16 +16,19 @@ test('subject triage deep links survive reload and browser history', async ({ pa
   await expect(page.getByLabel('Show', { exact: true })).toHaveValue('archived')
 })
 
-test('subject details return to the exact collection context', async ({ page }) => {
+test('subject detail and decision workflows restore the collection context', async ({ page }) => {
   await page.goto('/trial/subject-workspace?subject=S-015&q=TF-201&state=unclaimed&sort=revision-desc&size=5&source=review')
-  await page.getByRole('link', { name: 'Open record details' }).click()
-  await page.reload()
-  await page.getByRole('link', { name: 'Back to workspace' }).click()
-  await expect(page.getByLabel('Search subjects')).toHaveValue('TF-201')
-  await expect(page.getByLabel('Work state')).toHaveValue('unclaimed')
-  await expect(page.getByLabel('Sort subjects')).toHaveValue('revision-desc')
-  await expect(page).toHaveURL(/source=review/)
-  await expect(page.getByLabel('Selected subject', { exact: true })).toContainText('S-015')
+  for (const name of ['Open record details', 'Open decision workflow']) {
+    await page.getByRole('link', { name }).click()
+    await expect(page.getByLabel('Selected record context')).toContainText('S-015')
+    await page.reload()
+    await page.getByRole('link', { name: 'Back to workspace' }).click()
+    await expect(page.getByLabel('Search subjects')).toHaveValue('TF-201')
+    await expect(page.getByLabel('Work state')).toHaveValue('unclaimed')
+    await expect(page.getByLabel('Sort subjects')).toHaveValue('revision-desc')
+    await expect(page).toHaveURL(/source=review/)
+    await expect(page.getByLabel('Selected subject', { exact: true })).toContainText('S-015')
+  }
 })
 
 test('subject page selection remains explicit when filtering and resetting', async ({ page }) => {
