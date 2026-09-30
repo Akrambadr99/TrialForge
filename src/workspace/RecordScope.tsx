@@ -26,7 +26,10 @@ function RecordSession({ id, back, open, reload, children, restoreFocus }: {
   })
   const [failure, setFailure] = useState('')
   const contextRef = useRef<HTMLElement>(null)
-  useEffect(() => { if (restoreFocus) contextRef.current?.focus() }, [restoreFocus])
+  useEffect(() => {
+    document.scrollingElement?.scrollTo({ top: 0, behavior: 'instant' })
+    if (restoreFocus) contextRef.current?.focus({ preventScroll: true })
+  }, [restoreFocus])
   function guard<T extends unknown[]>(action: (...args: T) => void) {
     return (...args: T) => {
       try { action(...args); setFailure('') }
