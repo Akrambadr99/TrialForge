@@ -1,3 +1,6 @@
+import { recordDetailPath, recordDecisionPath } from './recordLinks'
+import { Link } from 'react-router-dom'
+import { saveCurrentCollection } from '../../workspace/recordStorage'
 import { useState } from 'react'
 import { useSearchParams } from 'react-router-dom'
 import { protocolReviewers } from './protocolWorkload'
@@ -13,9 +16,9 @@ export function StudyCollectionPage() {
   const selectedId = params.get('subject') ?? 'S-015'
   const selected = collection.subjects.find(item => item.id === selectedId)
   function choose(id: string) { setParams(current => { const next = new URLSearchParams(current); next.set('subject', id); return next }) }
-  function persist(next: typeof collection, message: string) { setCollection(saveStudyCollection(window.localStorage, next)); setNotice(message) }
+  function persist(next: typeof collection, message: string) { try { setCollection(saveCurrentCollection(window.localStorage, collection, next, readStudyCollection, saveStudyCollection)); setNotice(message); return true } catch (error) { setNotice(error instanceof Error ? error.message : 'Save failed. Your input is preserved.'); return false } }
   function run(action: () => typeof collection, success: string) {
-    try { persist(action(), success) } catch (error) { setNotice(error instanceof Error ? error.message : 'Study operation failed.') }
+    try { return persist(action(), success) } catch (error) { setNotice(error instanceof Error ? error.message : 'Study operation failed.'); return false }
   }
   return <main className="suite-page"><header className="suite-title"><div><small>STUDIES / PROTOCOL RESPONSIBILITY</small>
     <h1>Subject protocol workspace</h1><p>Independent subject milestones connected to study-wide amendments and medical review.</p></div></header>
@@ -45,7 +48,7 @@ export function StudyCollectionPage() {
       <button disabled={!checked.length} onClick={() => { const result = requestSubjectReviews(collection, checked)
         persist(result.collection, `${String(result.updated.length)} requested; ${String(result.skipped.length)} skipped; ${String(result.blocked.length)} blocked.`)
       }}>Request selected medical reviews</button>
-      <form onSubmit={event => { event.preventDefault(); run(() => createSubject(collection, newId, 'TF-201'), 'Subject created.'); setNewId('') }}>
+      <form onSubmit={event => { event.preventDefault(); if (run(() => createSubject(collection, newId, 'TF-201'), 'Subject created.')) setNewId('') }}>
         <label>New subject ID <input value={newId} onChange={event => { setNewId(event.target.value) }} required pattern="S-[0-9]{3}" /></label>
         <button type="submit">Add TF-201 subject</button></form>
     </section>
@@ -66,6 +69,7 @@ export function StudyCollectionPage() {
     </>}</section>
     <section className="suite-card" aria-label="Study audit"><h2>Collection audit</h2><ol>{collection.audit.toReversed().slice(0, 8).map((item, index) =>
       <li key={index}>{item.action} · {item.id} · {item.related.join(', ') || 'none'}</li>)}</ol></section>
+    <nav aria-label="Selected record workflows">{selected && !selected.archived && <><Link to={recordDetailPath(selected)}>Open record details</Link>{' · '}<Link to={recordDecisionPath(selected)}>Open decision workflow</Link></>} <button onClick={() => { try { setCollection(readStudyCollection(window.localStorage)); setNotice('Workspace refreshed; selection preserved.') } catch (error) { setNotice(error instanceof Error ? error.message : 'Refresh failed.') } }}>Refresh workspace</button></nav>
     <p role="status">{notice}</p>
   </main>
 }

@@ -1,0 +1,39 @@
+import { expect, test } from '@playwright/test'
+
+test('detail changes reach the selected workspace record and survive reload', async ({ page }) => {
+  await page.goto('/trial/subject-workspace?subject=S-014')
+  const selected = page.getByLabel('Selected subject', { exact: true })
+  const before = await selected.textContent()
+  await page.getByRole('link', { name: 'Open record details' }).click()
+  await expect(page.getByLabel('Selected record context')).toContainText('S-014')
+  await page.getByLabel('Consent version').selectOption('4')
+  await page.getByRole('button', { name: 'Record visit', exact: true }).click()
+  await page.getByRole('link', { name: 'Back to workspace' }).click()
+  await expect(selected).not.toHaveText(before ?? '')
+  const after = await selected.textContent()
+  await page.reload()
+  await expect(selected).toHaveText(after ?? '')
+  await page.getByRole('link', { name: 'Open record details' }).click()
+  await expect(page.getByLabel('Selected record context')).toContainText('S-014')
+})
+
+test('secondary record selection and return navigation work at tablet width', async ({ page }) => {
+  await page.setViewportSize({ width: 820, height: 1180 })
+  await page.goto('/trial/subject-workspace?subject=S-015')
+  await page.getByRole('link', { name: 'Open record details' }).click()
+  await expect(page.getByLabel('Selected record context')).toContainText('S-015')
+  await expect(page.getByRole('heading', { level: 1 })).toBeVisible()
+  await page.screenshot({ path: '../UI_SCREENSHOTS/fifteenth-TrialForge-detail.png', fullPage: true })
+  await page.reload()
+  await expect(page.getByLabel('Selected record context')).toContainText('S-015')
+  await page.getByRole('link', { name: 'Back to workspace' }).click()
+  await expect(page.getByLabel('Selected subject', { exact: true })).toContainText('S-015')
+})
+
+test('unknown record recovery never opens the default record', async ({ page }) => {
+  await page.goto('/studies/TF-201/subjects/S-014/timeline?record=MISSING')
+  await expect(page.getByRole('alert')).toContainText('not found')
+  await expect(page.getByRole('heading', { level: 1 })).toHaveCount(0)
+  await page.getByRole('link', { name: 'Back to workspace' }).click()
+  await expect(page.getByRole('button', { name: 'Refresh workspace' })).toBeVisible()
+})
