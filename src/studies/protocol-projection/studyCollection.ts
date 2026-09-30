@@ -1,4 +1,6 @@
 import type { StoragePort } from '../../workspace/repository'
+import { readStored, writeStored } from '../../workspace/storageValidation'
+import { studyCollectionRule } from './collectionValidation'
 import { initialMilestone, readMilestone, requestMedicalReview, transitionMilestone } from './subjectLedger'
 import type { SubjectMilestone } from './subjectLedger'
 import { claimMedicalReview, protocolInbox } from './protocolWorkload'
@@ -31,15 +33,12 @@ export function seedStudyCollection(legacy: SubjectMilestone = initialMilestone)
   ], audit: [] }
 }
 export function readStudyCollection(storage: StoragePort): StudyCollection {
-  const raw = storage.getItem(key)
-  if (!raw) return seedStudyCollection(readMilestone(storage))
-  const value: unknown = JSON.parse(raw)
-  if (!value || typeof value !== 'object' || !('studies' in value) || !Array.isArray(value.studies) ||
-    !('subjects' in value) || !Array.isArray(value.subjects) || !('audit' in value) || !Array.isArray(value.audit))
-    throw new Error('Invalid study collection.')
-  return value as StudyCollection
+  return readStored(storage, key, studyCollectionRule, () => seedStudyCollection(readMilestone(storage)),
+    'trialforge:subject:S-014:milestones:v1')
 }
-export function saveStudyCollection(storage: StoragePort, value: StudyCollection): StudyCollection { storage.setItem(key, JSON.stringify(value)); return value }
+export function saveStudyCollection(storage: StoragePort, value: StudyCollection): StudyCollection {
+  return writeStored(storage, key, studyCollectionRule, value)
+}
 export function subjectById(value: StudyCollection, id: string): SubjectRecord {
   const record = value.subjects.find(item => item.id === id)
   if (!record) throw new Error(`Subject ${id} was not found.`)

@@ -83,7 +83,7 @@ describe('selected subject persistence', () => {
     const storage = new MemoryStorage(), bound = openSelectedRecord(storage)
     const changed = edit(readMilestone(bound))
     storage.fail = true
-    expect(() => saveMilestone(bound, changed)).toThrow('Storage full')
+    expect(() => saveMilestone(bound, changed)).toThrow('Browser storage rejected the save')
     storage.fail = false
     saveMilestone(bound, changed)
     expect(readMilestone(openSelectedRecord(storage))).toEqual(changed)
