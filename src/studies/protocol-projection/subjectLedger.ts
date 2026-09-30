@@ -1,4 +1,4 @@
-import type { StoragePort } from '../../workspace/repository'
+import type { StoragePort, StorageReader } from '../../platform/storage-port'
 
 export interface SubjectMilestone {
   visitAt: string | null
@@ -33,7 +33,7 @@ export type SubjectAction =
 const key = 'trialforge:subject:S-014:milestones:v1'
 export const initialMilestone: SubjectMilestone = { visitAt: null, protocolVersion: null, activeProtocolVersion: 4, amendmentAuthor: null, certifiedProtocolVersion: 4, nextVisitAuthorized: false, medicalReviews: [], revision: 0, history: [] }
 
-export function readMilestone(storage: StoragePort): SubjectMilestone {
+export function readMilestone(storage: StorageReader): SubjectMilestone {
   const raw = storage.getItem(key)
   if (!raw) return initialMilestone
   const value: unknown = JSON.parse(raw)

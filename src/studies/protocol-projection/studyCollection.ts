@@ -1,4 +1,4 @@
-import type { StoragePort } from '../../workspace/repository'
+import type { StoragePort, StorageReader } from '../../platform/storage-port'
 import { readStored, writeStored } from '../../workspace/storageValidation'
 import { studyCollectionRule } from './collectionValidation'
 import { initialMilestone, readMilestone, requestMedicalReview, transitionMilestone } from './subjectLedger'
@@ -32,7 +32,7 @@ export function seedStudyCollection(legacy: SubjectMilestone = initialMilestone)
     { id: 'S-302', studyId: 'TF-300', milestone: prepared(4, false), archived: false },
   ], audit: [] }
 }
-export function readStudyCollection(storage: StoragePort): StudyCollection {
+export function readStudyCollection(storage: StorageReader): StudyCollection {
   return readStored(storage, key, studyCollectionRule, () => seedStudyCollection(readMilestone(storage)),
     'trialforge:subject:S-014:milestones:v1')
 }
