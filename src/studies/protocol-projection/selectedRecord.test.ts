@@ -14,6 +14,15 @@ class MemoryStorage implements StoragePort {
 const edit: (state: ReturnType<typeof readMilestone>) => ReturnType<typeof readMilestone> = state => transitionMilestone(state, { type: 'amend-protocol', version: state.activeProtocolVersion + 1, actor: 'protocol author', reason: 'Safety monitoring amendment verified.' })
 const key = 'trialforge:subject:S-014:milestones:v1'
 describe('selected subject persistence', () => {
+  it('preserves the primary migration source when a secondary record opens first', () => {
+    const storage = new MemoryStorage()
+    const before = readStudyCollection(storage)
+    const peer = before.subjects[1]
+    if (!peer) throw new Error('Secondary fixture missing')
+    const bound = openSelectedRecord(storage, peer.id)
+    expect(readStudyCollection(bound)).toEqual(before)
+    expect(storage.data.size).toBe(0)
+  })
   it('imports legacy history once and retains its original backup', () => {
     const storage = new MemoryStorage()
     const legacy = edit(readMilestone(storage))

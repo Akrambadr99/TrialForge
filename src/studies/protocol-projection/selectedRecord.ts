@@ -6,6 +6,7 @@ import { readMilestone } from './subjectLedger'
 export function openSelectedRecord(storage: StoragePort, id = 'S-014') {
   return bindRecord(storage, id, {
     key: 'trialforge:subject:S-014:milestones:v1',
+    collectionKey: 'trialforge:study-collection:v1',
     read: readStudyCollection, save: saveStudyCollection,
     find: (collection, target) => collection.subjects.find(item => item.id === target),
     value: record => record.milestone, archived: record => record.archived,
